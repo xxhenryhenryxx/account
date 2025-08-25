@@ -333,6 +333,121 @@
       font-size: 10px;
       color: #80868b;
     }
+
+    /* CSS cho bộ lọc đơn giản */
+    .filter-simple {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .filter-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-checkbox {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: #5f6368;
+      cursor: pointer;
+      min-width: 140px;
+    }
+
+    .filter-checkbox input[type="checkbox"] {
+      margin-right: 8px;
+      transform: scale(1.1);
+      accent-color: #4285f4;
+    }
+
+    .filter-row select {
+      font-size: 12px;
+      background: white;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 6px 8px;
+      min-width: 150px;
+      flex: 1;
+    }
+
+    .filter-row select:disabled {
+      background: #f1f3f4;
+      color: #80868b;
+      cursor: not-allowed;
+    }
+
+    .filter-actions {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* CSS cho toggle switch nhỏ gọn */
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    .mode-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #5f6368;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: #dadce0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #4285f4;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(26px);
+    }
+
+    /* CSS cho chế độ ghi dữ liệu */
+    .write-mode .account-item {
+      cursor: pointer;
+    }
+
+    .write-mode .account-item:hover {
+      background-color: #e6f4ea;
+    }
+
+    .write-mode .account-item input[type="checkbox"] {
+      accent-color: #34a853;
+    }
   </style>
 </head>
 <body>
@@ -341,78 +456,100 @@
   <div class="tab-container">
     <button class="tab active" onclick="switchTab('main')">📊 Báo Cáo Kế Toán</button>
     <button class="tab" onclick="switchTab('hanghoa')">📦 Báo Cáo Kho</button>
-    <button class="tab" onclick="switchTab('write')">✏️ Danh Mục Tài Khoản</button>
   </div>
 
   <!-- TAB BÁO CÁO KẾ TOÁN -->
   <div id="main" class="tab-content active">
-    <div class="section">
-      <!-- <div class="section-title">🔍 Tìm Kiếm Tài Khoản</div> -->
-      <div class="search-box">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Tìm theo mã hoặc tên tài khoản..." oninput="filterAccounts()">
-        <span class="search-icon">🔍</span>
-        <span class="clear-search" onclick="clearSearch()" title="Xóa tìm kiếm">✕</span>
-      </div>
+    <!-- Toggle switch cho 2 chế độ -->
+    <div class="mode-toggle">
+      <span class="mode-label">📊 Báo Cáo</span>
+      <div class="toggle-switch" onclick="toggleMode()" id="modeToggle"></div>
+      <span class="mode-label">✏️ Ghi Dữ Liệu</span>
     </div>
 
-    <div class="section">
-      <div class="section-title">📋 Danh Sách Tài Khoản</div>
-      <div class="select-all-controls">
-        <button class="btn-small" onclick="selectAllAccounts()">✅ Chọn Tất Cả</button>
-        <button class="btn-small" onclick="deselectAllAccounts()">❌ Bỏ Chọn Tất Cả</button>
-      </div>
-      <div class="account-list" id="accountList">
-        <div id="loading" style="padding: 20px; text-align: center; color: #5f6368;">Đang tải danh sách...</div>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">📅 Kỳ Báo Cáo</div>
-      <div class="date-inputs">
-        <div>
-          <label for="startDate">Từ ngày</label>
-          <input type="date" id="startDate">
-        </div>
-        <div>
-          <label for="endDate">Đến ngày</label>
-          <input type="date" id="endDate">
+    <!-- CHẾ ĐỘ BÁO CÁO -->
+    <div id="reportMode" class="mode-content">
+      <div class="section">
+        <div class="search-box">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 Tìm theo mã hoặc tên tài khoản..." oninput="filterAccounts()">
+          <span class="search-icon">🔍</span>
+          <span class="clear-search" onclick="clearSearch()" title="Xóa tìm kiếm">✕</span>
         </div>
       </div>
-    </div>
 
-    <div class="section">
-      <div class="section-title">📊 Loại Báo Cáo</div>
-      <div class="actions">
-        <button class="btn btn-primary" onclick="createCDPS()">📊 Cân Đối Phát Sinh</button>
-        <button class="btn btn-secondary" onclick="createSoChiTiet()">📖 Sổ Chi Tiết</button>
+      <div class="section">
+        <div class="section-title">📋 Danh Sách Tài Khoản</div>
+        <div class="select-all-controls">
+          <button class="btn-small" onclick="selectAllAccounts()">✅ Chọn Tất Cả</button>
+          <button class="btn-small" onclick="deselectAllAccounts()">❌ Bỏ Chọn Tất Cả</button>
+        </div>
+        <div class="account-list" id="accountList">
+          <div id="loading" style="padding: 20px; text-align: center; color: #5f6368;">Đang tải danh sách...</div>
+        </div>
       </div>
+
+      <div class="section">
+        <div class="section-title">📅 Kỳ Báo Cáo</div>
+        <div class="date-inputs">
+          <div>
+            <label for="startDate">Từ ngày</label>
+            <input type="date" id="startDate">
+          </div>
+          <div>
+            <label for="endDate">Đến ngày</label>
+            <input type="date" id="endDate">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">📊 Loại Báo Cáo</div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="createCDPS()">📊 Cân Đối Phát Sinh</button>
+          <button class="btn btn-secondary" onclick="createSoChiTiet()">📖 Sổ Chi Tiết</button>
+        </div>
+      </div>
+
+      <div class="status" id="status">Đã chọn: 0 tài khoản</div>
     </div>
 
-    <div class="status" id="status">Đã chọn: 0 tài khoản</div>
+    <!-- CHẾ ĐỘ GHI DỮ LIỆU -->
+    <div id="writeMode" class="mode-content" style="display: none;">
+      <div class="info-box">
+        💡 <strong>Hướng dẫn:</strong> Chọn tài khoản từ danh sách bên dưới để ghi vào ô đang được chọn trong sheet
+      </div>
+
+      <div class="section">
+        <div class="search-box">
+          <input type="text" id="writeSearchInput" class="search-input" placeholder="🔍 Tìm nhanh tài khoản..." oninput="filterWriteAccounts()">
+          <span class="search-icon">🔍</span>
+          <span class="clear-search" onclick="clearWriteSearch()" title="Xóa tìm kiếm">✕</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">💼 Tất Cả Tài Khoản</div>
+        <div class="select-all-controls">
+          <button class="btn-small" onclick="selectAllWriteAccounts()">✅ Chọn Tất Cả</button>
+          <button class="btn-small" onclick="deselectAllWriteAccounts()">❌ Bỏ Chọn Tất Cả</button>
+        </div>
+        <div class="account-list write-mode" id="writeAccountList">
+          <div id="loadingWrite" style="padding: 20px; text-align: center; color: #5f6368;">Đang tải danh sách...</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">🎯 Thao Tác</div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="writeSelectedAccounts()">✅ Ghi dữ liệu</button>
+        </div>
+      </div>
+
+      <div class="status" id="writeStatus" style="display:none;">Đã chọn: 0 tài khoản</div>
+    </div>
   </div>
 
-  <!-- TAB DANH MỤC TÀI KHOẢN -->
-  <div id="write" class="tab-content">
-    <div class="info-box">
-      💡 <strong>Hướng dẫn:</strong> Chọn tài khoản từ danh sách bên dưới để ghi vào ô đang được chọn trong sheet
-    </div>
 
-    <div class="section">
-      <!-- <div class="section-title">🔍 Tìm Kiếm Nhanh</div> -->
-      <div class="search-box">
-        <input type="text" id="quickSearchInput" class="search-input" placeholder="🔍 Tìm nhanh tài khoản..." oninput="filterQuickAccounts()">
-        <span class="search-icon">🔍</span>
-        <span class="clear-search" onclick="clearQuickSearch()" title="Xóa tìm kiếm">✕</span>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">💼 Tất Cả Tài Khoản</div>
-      <div class="account-list" id="allAccountsList">
-        <div id="loadingAll" style="padding: 20px; text-align: center; color: #5f6368;">Đang tải danh sách...</div>
-      </div>
-    </div>
-  </div>
 
   <!-- TAB BÁO CÁO KHO -->
   <div id="hanghoa" class="tab-content">
@@ -420,9 +557,11 @@
     <div class="section">
       <!-- <div class="section-title">🔍 Tìm Kiếm Hàng Hóa</div> -->
       <div class="search-box">
-        <input type="text" id="hanghoaSearchInput" class="search-input" placeholder="🔍 Tìm theo mã kho, mã hàng, tên hàng..." oninput="filterHangHoa()">
+        <input type="text" id="hanghoaSearchInput" class="search-input" placeholder="🔍 Tìm theo mã kho, mã hàng, tên hàng..." oninput="console.log('Input event triggered'); filterHangHoa();">
         <span class="search-icon">🔍</span>
-        <span class="clear-search" onclick="clearHangHoaSearch()" title="Xóa tìm kiếm">✕</span>
+        <span class="clear-search" id="clearHangHoaSearch" onclick="clearHangHoaSearch()" title="Xóa tìm kiếm">✕</span>
+        <button onclick="testFilterHangHoa()" style="margin-left: 10px; padding: 5px;">🧪 Test Filter</button>
+        <button onclick="debugHangHoaData()" style="margin-left: 10px; padding: 5px;">🐛 Debug Data</button>
       </div>
     </div>
 
@@ -458,6 +597,35 @@
         <button class="btn btn-secondary" onclick="createNhapXuatTon()">📊 Tạo Báo Cáo NXT</button>
       </div>
     </div>
+
+    <div class="section">
+      <div class="section-title">🔍 Lọc Theo Phân Loại</div>
+      <div class="filter-simple">
+        <div class="filter-row">
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterByKho" onchange="toggleKhoFilter()">
+            📦 Lọc theo mã kho
+          </label>
+          <select id="khoFilter" disabled onchange="applyKhoHangFilter()">
+            <option value="">Chọn mã kho...</option>
+          </select>
+        </div>
+        
+        <div class="filter-row">
+          <label class="filter-checkbox">
+            <input type="checkbox" id="filterByHang" onchange="toggleHangFilter()">
+            🏷️ Lọc theo mã hàng
+          </label>
+          <select id="hangFilter" disabled onchange="applyKhoHangFilter()">
+            <option value="">Chọn mã hàng...</option>
+          </select>
+        </div>
+        
+        <div class="filter-actions">
+          <button class="btn-small" onclick="resetKhoHangFilter()">🔄 Reset bộ lọc</button>
+        </div>
+      </div>
+    </div>
     <div class="status" id="hanghoaStatus" style="display:none;">Đã chọn: 0 hàng hóa</div>
   </div>
 
@@ -465,21 +633,36 @@
     let allAccounts = [];
     let selectedAccounts = [];
     let currentTab = 'main';
+    let currentMode = 'report'; // 'report' hoặc 'write'
     
     // Biến cho hàng hóa
     let allHangHoa = [];
     let selectedHangHoaIds = new Set();
+    
+    // Biến cho chế độ ghi dữ liệu
+    let selectedWriteAccounts = [];
+    
+    console.log('Variables initialized:', { selectedWriteAccounts, currentMode }); // Debug log
 
     window.onload = function() {
+      console.log('=== window.onload START ==='); // Debug log
+      console.log('Window loaded, initializing...'); // Debug log
+      
       // Tải ngày báo cáo đã lưu trước đó hoặc sử dụng mặc định
+      console.log('Loading report dates...'); // Debug log
       loadReportDates();
 
       // Tải danh sách tài khoản
+      console.log('Loading accounts...'); // Debug log
       loadAccounts();
       loadAllAccounts();
       
       // Tải danh sách hàng hóa
+      console.log('Loading hang hoa...'); // Debug log
       loadHangHoa();
+      
+      console.log('Initialization complete'); // Debug log
+      console.log('=== window.onload END ==='); // Debug log
     };
 
     function switchTab(tabName) {
@@ -503,6 +686,28 @@
       }
     }
 
+    function toggleMode() {
+      const toggleSwitch = document.getElementById('modeToggle');
+      const reportMode = document.getElementById('reportMode');
+      const writeMode = document.getElementById('writeMode');
+      
+      if (currentMode === 'report') {
+        // Chuyển sang chế độ ghi dữ liệu
+        toggleSwitch.classList.add('active');
+        reportMode.style.display = 'none';
+        writeMode.style.display = 'block';
+        currentMode = 'write';
+        updateWriteStatus();
+      } else {
+        // Chuyển sang chế độ báo cáo
+        toggleSwitch.classList.remove('active');
+        reportMode.style.display = 'block';
+        writeMode.style.display = 'none';
+        currentMode = 'report';
+        updateStatus();
+      }
+    }
+
     function loadAccounts() {
       google.script.run.withSuccessHandler(accounts => {
         allAccounts = accounts;
@@ -514,10 +719,13 @@
     }
 
     function loadAllAccounts() {
+      console.log('loadAllAccounts called'); // Debug log
       google.script.run.withSuccessHandler(accounts => {
-        renderAllAccountsList(accounts);
+        console.log('Accounts loaded successfully:', accounts); // Debug log
+        renderWriteAccountsList(accounts);
       }).withFailureHandler(err => {
-        document.getElementById('loadingAll').textContent = 'Lỗi tải dữ liệu.';
+        console.error('Error loading accounts:', err); // Debug log
+        document.getElementById('loadingWrite').textContent = 'Lỗi tải dữ liệu.';
       }).getAccountsForSidebar();
     }
 
@@ -553,12 +761,74 @@
     }
 
     function loadHangHoa() {
+      console.log('=== loadHangHoa START ==='); // Debug log
+      console.log('Calling getHangHoaForSidebar...'); // Debug log
+      
       google.script.run.withSuccessHandler(hangHoa => {
-        allHangHoa = hangHoa;
-        renderHangHoaList(allHangHoa);
+        console.log('=== getHangHoaForSidebar SUCCESS ==='); // Debug log
+        console.log('HangHoa loaded successfully:', hangHoa); // Debug log
+        console.log('HangHoa length:', hangHoa.length); // Debug log
+        console.log('HangHoa type:', typeof hangHoa); // Debug log
+        console.log('Is Array:', Array.isArray(hangHoa)); // Debug log
+        
+        if (Array.isArray(hangHoa)) {
+          allHangHoa = hangHoa;
+          console.log('allHangHoa set to:', allHangHoa); // Debug log
+          console.log('allHangHoa length after setting:', allHangHoa.length); // Debug log
+          
+          // Kiểm tra xem có dữ liệu thực sự không
+          if (allHangHoa.length > 0) {
+            console.log('First item:', allHangHoa[0]); // Debug log
+            console.log('Last item:', allHangHoa[allHangHoa.length - 1]); // Debug log
+          }
+          
+          renderHangHoaList(allHangHoa);
+        } else {
+          console.error('HangHoa is not an array:', hangHoa); // Debug log
+          allHangHoa = [];
+          renderHangHoaList([]);
+        }
       }).withFailureHandler(err => {
+        console.error('=== getHangHoaForSidebar FAILURE ==='); // Debug log
+        console.error('Error loading HangHoa:', err); // Debug log
         document.getElementById('loadingHangHoa').textContent = 'Lỗi tải dữ liệu hàng hóa.';
       }).getHangHoaForSidebar();
+      
+      console.log('=== loadHangHoa END ==='); // Debug log
+    }
+
+    function testFilterHangHoa() {
+      console.log('=== testFilterHangHoa START ==='); // Debug log
+      console.log('Testing filterHangHoa function...'); // Debug log
+      console.log('Current allHangHoa:', allHangHoa); // Debug log
+      console.log('Current allHangHoa length:', allHangHoa.length); // Debug log
+      
+      // Test với search term "test"
+      document.getElementById('hanghoaSearchInput').value = 'test';
+      filterHangHoa();
+      
+      console.log('=== testFilterHangHoa END ==='); // Debug log
+    }
+
+    function debugHangHoaData() {
+      console.log('=== debugHangHoaData START ==='); // Debug log
+      console.log('allHangHoa:', allHangHoa); // Debug log
+      console.log('allHangHoa length:', allHangHoa.length); // Debug log
+      console.log('allHangHoa type:', typeof allHangHoa); // Debug log
+      console.log('Is Array:', Array.isArray(allHangHoa)); // Debug log
+      
+      if (Array.isArray(allHangHoa)) {
+        console.log('First 5 items:', allHangHoa.slice(0, 5)); // Debug log
+        console.log('Last 5 items:', allHangHoa.slice(-5)); // Debug log
+      }
+      
+      // Kiểm tra DOM elements
+      const listElement = document.getElementById('hanghoaList');
+      const loadingElement = document.getElementById('loadingHangHoa');
+      console.log('hanghoaList element:', listElement); // Debug log
+      console.log('loadingHangHoa element:', loadingElement); // Debug log
+      
+      console.log('=== debugHangHoaData END ==='); // Debug log
     }
 
     function renderAccountList(accounts) {
@@ -585,8 +855,10 @@
       listElement.innerHTML = html;
     }
 
-    function renderAllAccountsList(accounts) {
-      const listElement = document.getElementById('allAccountsList');
+    function renderWriteAccountsList(accounts) {
+      const listElement = document.getElementById('writeAccountList');
+      console.log('renderWriteAccountsList called with:', accounts); // Debug log
+      
       if (accounts.length === 0) {
         listElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #5f6368;">Không tìm thấy tài khoản.</div>';
         return;
@@ -594,16 +866,20 @@
       
       let html = '';
       accounts.forEach(acc => {
+        const isChecked = selectedWriteAccounts.includes(acc.ma);
         html += `
-          <div class="account-item" onclick="writeAccountToCell('${acc.ma}')">
+          <label class="account-item" for="write-acc-${acc.ma}">
+            <input type="checkbox" id="write-acc-${acc.ma}" value="${acc.ma}" 
+                   ${isChecked ? 'checked' : ''} onchange="updateWriteSelection()">
             <div class="account-info">
               <div class="account-code">${acc.ma}</div>
               <div class="account-name">${acc.ten}</div>
             </div>
-          </div>
+          </label>
         `;
       });
       listElement.innerHTML = html;
+      console.log('Write accounts list rendered, selectedWriteAccounts:', selectedWriteAccounts); // Debug log
     }
 
     function filterAccounts() {
@@ -623,8 +899,8 @@
       }
     }
 
-    function filterQuickAccounts() {
-      const searchTerm = document.getElementById('quickSearchInput').value.toLowerCase();
+    function filterWriteAccounts() {
+      const searchTerm = document.getElementById('writeSearchInput').value.toLowerCase();
       const clearBtn = document.querySelectorAll('.clear-search')[1];
       
       if (searchTerm) {
@@ -633,10 +909,10 @@
           acc.ma.toLowerCase().includes(searchTerm) || 
           acc.ten.toLowerCase().includes(searchTerm)
         );
-        renderAllAccountsList(filtered);
+        renderWriteAccountsList(filtered);
       } else {
         clearBtn.style.display = 'none';
-        renderAllAccountsList(allAccounts);
+        renderWriteAccountsList(allAccounts);
       }
     }
 
@@ -646,10 +922,10 @@
       renderAccountList(allAccounts);
     }
 
-    function clearQuickSearch() {
-      document.getElementById('quickSearchInput').value = '';
+    function clearWriteSearch() {
+      document.getElementById('writeSearchInput').value = '';
       document.querySelectorAll('.clear-search')[1].style.display = 'none';
-      renderAllAccountsList(allAccounts);
+      renderWriteAccountsList(allAccounts);
     }
 
     function selectAllAccounts() {
@@ -666,6 +942,23 @@
         cb.checked = false;
       });
       updateSelection();
+    }
+
+    function selectAllWriteAccounts() {
+      const checkboxes = document.querySelectorAll('#writeAccountList input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.checked = true;
+      });
+      updateWriteSelection(); // Gọi hàm này để cập nhật selectedWriteAccounts
+    }
+
+    function deselectAllWriteAccounts() {
+      const checkboxes = document.querySelectorAll('#writeAccountList input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.checked = false;
+      });
+      selectedWriteAccounts = [];
+      updateWriteStatus();
     }
 
     function updateSelection() {
@@ -687,31 +980,65 @@
       google.script.run.saveSelectedAccounts(selectedAccounts);
     }
 
-    function writeAccountToCell(maTK) {
+    function updateWriteSelection() {
+      const checkboxes = document.querySelectorAll('#writeAccountList input[type="checkbox"]:checked');
+      selectedWriteAccounts = Array.from(checkboxes).map(cb => cb.value);
+      console.log('Selected write accounts:', selectedWriteAccounts); // Debug log
+      updateWriteStatus();
+    }
+
+    function updateWriteStatus() {
+      const statusElement = document.getElementById('writeStatus');
+      if (selectedWriteAccounts.length > 0) {
+        statusElement.textContent = `Đã chọn: ${selectedWriteAccounts.length} tài khoản`;
+        statusElement.style.display = 'block';
+      } else {
+        statusElement.style.display = 'none';
+      }
+    }
+
+    function writeSelectedAccounts() {
+      console.log('writeSelectedAccounts called, selectedWriteAccounts:', selectedWriteAccounts); // Debug log
+      
+      if (selectedWriteAccounts.length === 0) {
+        alert('Vui lòng chọn ít nhất một tài khoản');
+        return;
+      }
+
+      // Ghi tất cả tài khoản đã chọn vào sheet (lần lượt từ trên xuống dưới)
       google.script.run.withSuccessHandler(result => {
         if (result.success) {
           // Hiển thị thông báo thành công
-          const statusElement = document.getElementById('status');
-          statusElement.textContent = `✅ Đã ghi "${maTK}" vào sheet`;
+          const statusElement = document.getElementById('writeStatus');
+          statusElement.textContent = `✅ Đã ghi ${result.count} tài khoản vào sheet`;
           statusElement.style.background = '#e6f4ea';
           statusElement.style.borderColor = '#34a853';
           statusElement.style.color = '#137333';
           
           // Reset sau 3 giây
           setTimeout(() => {
-            statusElement.textContent = `Đã chọn: ${selectedAccounts.length} tài khoản`;
+            statusElement.textContent = `Đã chọn: 0 tài khoản`;
             statusElement.style.background = 'white';
             statusElement.style.borderColor = '#e8eaed';
             statusElement.style.color = '#5f6368';
           }, 3000);
           
-          // Không chuyển tab, chỉ hiển thị thông báo
+          // Xóa selection và reset checkbox
+          selectedWriteAccounts = [];
+          updateWriteStatus();
+          
+          // Reset tất cả checkbox
+          const checkboxes = document.querySelectorAll('#writeAccountList input[type="checkbox"]');
+          checkboxes.forEach(cb => {
+            cb.checked = false;
+          });
+          
         } else {
           alert('Lỗi: ' + result.error);
         }
       }).withFailureHandler(error => {
         alert('Lỗi hệ thống: ' + error.toString());
-      }).ghiTaiKhoanVaoCell(maTK);
+      }).ghiNhieuTaiKhoanVaoSheet(selectedWriteAccounts);
     }
 
     function createCDPS() {
@@ -828,20 +1155,34 @@
     // ==================== CHỨC NĂNG HÀNG HÓA ====================
     
     function renderHangHoaList(hangHoaToRender) {
+      console.log('=== renderHangHoaList START ==='); // Debug log
+      console.log('hangHoaToRender:', hangHoaToRender); // Debug log
+      console.log('hangHoaToRender length:', hangHoaToRender.length); // Debug log
+      
       const listElement = document.getElementById('hanghoaList');
+      console.log('listElement:', listElement); // Debug log
+      
       const loadingElement = document.getElementById('loadingHangHoa');
+      console.log('loadingElement:', loadingElement); // Debug log
       
       if (hangHoaToRender.length === 0) {
+        console.log('No items to render, showing no results message'); // Debug log
         loadingElement.style.display = 'none';
         listElement.innerHTML = '<div class="no-results" style="padding: 20px; text-align: center; color: #5f6368; font-style: italic;">Không tìm thấy hàng hóa phù hợp.</div>';
         return;
       }
       
+      console.log('Rendering items...'); // Debug log
       loadingElement.style.display = 'none';
       listElement.style.display = 'block';
       
       let html = '';
-      hangHoaToRender.forEach(item => {
+      let itemCount = 0; // Debug counter
+      
+      hangHoaToRender.forEach((item, index) => {
+        console.log(`Rendering item ${index}:`, item); // Debug log
+        itemCount++; // Debug counter
+        
         const isChecked = selectedHangHoaIds.has(item.uniqueId) ? 'checked' : '';
         html += `
           <label class="hanghoa-item" for="hanghoa-${item.uniqueId}">
@@ -856,7 +1197,17 @@
           </label>
         `;
       });
+      
+      console.log('Total items processed:', itemCount); // Debug log
+      console.log('Final HTML length:', html.length); // Debug log
+      console.log('HTML preview (first 500 chars):', html.substring(0, 500)); // Debug log
+      
       listElement.innerHTML = html;
+      
+      // Kiểm tra xem HTML có được set đúng không
+      console.log('After setting innerHTML, listElement.children.length:', listElement.children.length); // Debug log
+      
+      console.log('=== renderHangHoaList END ==='); // Debug log
     }
 
     function toggleHangHoaSelection(uniqueId) {
@@ -879,8 +1230,24 @@
     }
 
     function filterHangHoa() {
-      const searchTerm = document.getElementById('hanghoaSearchInput').value.toLowerCase();
-      const clearBtn = document.querySelectorAll('.clear-search')[2];
+      console.log('=== filterHangHoa START ==='); // Debug log
+      
+      const searchInput = document.getElementById('hanghoaSearchInput');
+      console.log('searchInput element:', searchInput); // Debug log
+      
+      if (!searchInput) {
+        console.error('hanghoaSearchInput element not found!'); // Debug log
+        return;
+      }
+      
+      const searchTerm = searchInput.value.toLowerCase();
+      console.log('searchTerm:', searchTerm); // Debug log
+      
+      const clearBtn = document.getElementById('clearHangHoaSearch');
+      console.log('clearBtn element:', clearBtn); // Debug log
+      
+      console.log('allHangHoa:', allHangHoa); // Debug log
+      console.log('allHangHoa length:', allHangHoa.length); // Debug log
       
       if (searchTerm) {
         clearBtn.style.display = 'block';
@@ -889,16 +1256,20 @@
           item.maHang.toLowerCase().includes(searchTerm) ||
           item.tenHang.toLowerCase().includes(searchTerm)
         );
+        console.log('Filtered results:', filtered); // Debug log
+        console.log('Filtered results length:', filtered.length); // Debug log
         renderHangHoaList(filtered);
       } else {
         clearBtn.style.display = 'none';
         renderHangHoaList(allHangHoa);
       }
+      
+      console.log('=== filterHangHoa END ==='); // Debug log
     }
 
     function clearHangHoaSearch() {
       document.getElementById('hanghoaSearchInput').value = '';
-      document.querySelectorAll('.clear-search')[2].style.display = 'none';
+      document.getElementById('clearHangHoaSearch').style.display = 'none';
       renderHangHoaList(allHangHoa);
     }
 
@@ -1022,6 +1393,109 @@
         statusElement.style.color = '#721c24';
       }).taoNhapXuatTonFromSidebar(startDate, endDate, selectedItems);
     }
+
+    // ==================== CHỨC NĂNG LỌC PHÂN LOẠI ĐƠN GIẢN ====================
+    
+    function toggleKhoFilter() {
+      const filterByKho = document.getElementById('filterByKho').checked;
+      const khoFilter = document.getElementById('khoFilter');
+      
+      khoFilter.disabled = !filterByKho;
+      
+      if (filterByKho) {
+        populateKhoOptions();
+      } else {
+        khoFilter.value = '';
+        renderHangHoaList(allHangHoa);
+      }
+    }
+    
+    function toggleHangFilter() {
+      const filterByHang = document.getElementById('filterByHang').checked;
+      const hangFilter = document.getElementById('hangFilter');
+      
+      hangFilter.disabled = !filterByHang;
+      
+      if (filterByHang) {
+        populateHangOptions();
+      } else {
+        hangFilter.value = '';
+        renderHangHoaList(allHangHoa);
+      }
+    }
+    
+    function populateKhoOptions() {
+      const khoFilter = document.getElementById('khoFilter');
+      const khoList = [...new Set(allHangHoa.map(item => item.maKho))].sort();
+      
+      khoFilter.innerHTML = '<option value="">Chọn mã kho...</option>';
+      khoList.forEach(kho => {
+        khoFilter.innerHTML += `<option value="${kho}">${kho}</option>`;
+      });
+    }
+    
+    function populateHangOptions() {
+      const hangFilter = document.getElementById('hangFilter');
+      const hangList = [...new Set(allHangHoa.map(item => item.maHang))].sort();
+      
+      hangFilter.innerHTML = '<option value="">Chọn mã hàng...</option>';
+      hangList.forEach(hang => {
+        hangFilter.innerHTML += `<option value="${hang}">${hang}</option>`;
+      });
+    }
+    
+    function applyKhoHangFilter() {
+      console.log('applyKhoHangFilter called'); // Debug log
+      
+      const filterByKho = document.getElementById('filterByKho').checked;
+      const filterByHang = document.getElementById('filterByHang').checked;
+      
+      console.log('Filter by kho:', filterByKho, 'Filter by hang:', filterByHang); // Debug log
+      
+      let filteredHangHoa = [...allHangHoa];
+      
+      if (filterByKho) {
+        const selectedKho = document.getElementById('khoFilter').value;
+        console.log('Selected kho:', selectedKho); // Debug log
+        if (selectedKho) {
+          filteredHangHoa = filteredHangHoa.filter(item => item.maKho === selectedKho);
+          console.log('After kho filter:', filteredHangHoa.length); // Debug log
+        }
+      }
+      
+      if (filterByHang) {
+        const selectedHang = document.getElementById('hangFilter').value;
+        console.log('Selected hang:', selectedHang); // Debug log
+        if (selectedHang) {
+          filteredHangHoa = filteredHangHoa.filter(item => item.maHang === selectedHang);
+          console.log('After hang filter:', filteredHangHoa.length); // Debug log
+        }
+      }
+      
+      console.log('Final filtered results:', filteredHangHoa.length); // Debug log
+      
+      // Render danh sách đã lọc
+      renderHangHoaList(filteredHangHoa);
+    }
+    
+    function resetKhoHangFilter() {
+      // Reset tất cả checkbox
+      document.getElementById('filterByKho').checked = false;
+      document.getElementById('filterByHang').checked = false;
+      
+      // Reset tất cả select
+      document.getElementById('khoFilter').disabled = true;
+      document.getElementById('hangFilter').disabled = true;
+      
+      // Reset values
+      document.getElementById('khoFilter').value = '';
+      document.getElementById('hangFilter').value = '';
+      
+      // Hiển thị lại tất cả hàng hóa
+      renderHangHoaList(allHangHoa);
+    }
+    
+
   </script>
 </body>
 </html>
