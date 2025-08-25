@@ -360,7 +360,7 @@
       font-weight: 500;
       color: #5f6368;
       cursor: pointer;
-      min-width: 140px;
+      min-width: 10px;
     }
 
     .filter-checkbox input[type="checkbox"] {
@@ -555,15 +555,14 @@
   <div id="hanghoa" class="tab-content">
 
     <div class="section">
-      <!-- <div class="section-title">🔍 Tìm Kiếm Hàng Hóa</div> -->
+
       <div class="search-box">
-        <input type="text" id="hanghoaSearchInput" class="search-input" placeholder="🔍 Tìm theo mã kho, mã hàng, tên hàng..." oninput="console.log('Input event triggered'); filterHangHoa();">
-        <span class="search-icon">🔍</span>
+        <input type="text" id="hanghoaSearchInput" class="search-input" placeholder="🔍 Tìm theo mã kho, mã hàng, tên hàng..." oninput="filterHangHoa();">
+        <!-- <span class="search-icon">🔍</span> -->
         <span class="clear-search" id="clearHangHoaSearch" onclick="clearHangHoaSearch()" title="Xóa tìm kiếm">✕</span>
-        <button onclick="testFilterHangHoa()" style="margin-left: 10px; padding: 5px;">🧪 Test Filter</button>
-        <button onclick="debugHangHoaData()" style="margin-left: 10px; padding: 5px;">🐛 Debug Data</button>
-      </div>
+      </div>     
     </div>
+
 
     <div class="section">
       <div class="section-title">📦 Danh Sách Hàng Hóa</div>
@@ -598,34 +597,6 @@
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">🔍 Lọc Theo Phân Loại</div>
-      <div class="filter-simple">
-        <div class="filter-row">
-          <label class="filter-checkbox">
-            <input type="checkbox" id="filterByKho" onchange="toggleKhoFilter()">
-            📦 Lọc theo mã kho
-          </label>
-          <select id="khoFilter" disabled onchange="applyKhoHangFilter()">
-            <option value="">Chọn mã kho...</option>
-          </select>
-        </div>
-        
-        <div class="filter-row">
-          <label class="filter-checkbox">
-            <input type="checkbox" id="filterByHang" onchange="toggleHangFilter()">
-            🏷️ Lọc theo mã hàng
-          </label>
-          <select id="hangFilter" disabled onchange="applyKhoHangFilter()">
-            <option value="">Chọn mã hàng...</option>
-          </select>
-        </div>
-        
-        <div class="filter-actions">
-          <button class="btn-small" onclick="resetKhoHangFilter()">🔄 Reset bộ lọc</button>
-        </div>
-      </div>
-    </div>
     <div class="status" id="hanghoaStatus" style="display:none;">Đã chọn: 0 hàng hóa</div>
   </div>
 
@@ -764,72 +735,102 @@
       console.log('=== loadHangHoa START ==='); // Debug log
       console.log('Calling getHangHoaForSidebar...'); // Debug log
       
-      google.script.run.withSuccessHandler(hangHoa => {
-        console.log('=== getHangHoaForSidebar SUCCESS ==='); // Debug log
-        console.log('HangHoa loaded successfully:', hangHoa); // Debug log
-        console.log('HangHoa length:', hangHoa.length); // Debug log
-        console.log('HangHoa type:', typeof hangHoa); // Debug log
-        console.log('Is Array:', Array.isArray(hangHoa)); // Debug log
+      try {
+        // Hiển thị loading state
+        const loadingElement = document.getElementById('loadingHangHoa');
+        if (loadingElement) {
+          loadingElement.textContent = 'Đang tải danh sách hàng hóa...';
+          loadingElement.style.display = 'block';
+        }
         
-        if (Array.isArray(hangHoa)) {
-          allHangHoa = hangHoa;
-          console.log('allHangHoa set to:', allHangHoa); // Debug log
-          console.log('allHangHoa length after setting:', allHangHoa.length); // Debug log
+        google.script.run.withSuccessHandler(hangHoa => {
+          console.log('=== getHangHoaForSidebar SUCCESS ==='); // Debug log
+          console.log('HangHoa loaded successfully:', hangHoa); // Debug log
+          console.log('HangHoa length:', hangHoa.length); // Debug log
+          console.log('HangHoa type:', typeof hangHoa); // Debug log
+          console.log('Is Array:', Array.isArray(hangHoa)); // Debug log
           
-          // Kiểm tra xem có dữ liệu thực sự không
-          if (allHangHoa.length > 0) {
-            console.log('First item:', allHangHoa[0]); // Debug log
-            console.log('Last item:', allHangHoa[allHangHoa.length - 1]); // Debug log
+          try {
+            if (Array.isArray(hangHoa) && hangHoa.length > 0) {
+              allHangHoa = hangHoa;
+              console.log('allHangHoa set to:', allHangHoa); // Debug log
+              console.log('allHangHoa length after setting:', allHangHoa.length); // Debug log
+              
+              // Kiểm tra xem có dữ liệu thực sự không
+              if (allHangHoa.length > 0) {
+                console.log('First item:', allHangHoa[0]); // Debug log
+                console.log('Last item:', allHangHoa[allHangHoa.length - 1]); // Debug log
+                
+                // Kiểm tra cấu trúc dữ liệu
+                const firstItem = allHangHoa[0];
+                console.log('First item structure:', {
+                  maKho: firstItem.maKho,
+                  maHang: firstItem.maHang,
+                  tenHang: firstItem.tenHang,
+                  uniqueId: firstItem.uniqueId
+                });
+              }
+              
+              // Render danh sách hàng hóa
+              renderHangHoaList(allHangHoa);
+              
+              // Cập nhật các filter options
+              populateKhoOptions();
+              populateHangOptions();
+              
+            } else {
+              console.error('HangHoa is not an array or empty:', hangHoa); // Debug log
+              allHangHoa = [];
+              
+              // Hiển thị thông báo không có dữ liệu
+              const listElement = document.getElementById('hanghoaList');
+              if (listElement) {
+                listElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #5f6368;">Không có dữ liệu hàng hóa.</div>';
+              }
+              
+              if (loadingElement) {
+                loadingElement.style.display = 'none';
+              }
+            }
+          } catch (error) {
+            console.error('Error processing hangHoa data:', error); // Debug log
+            allHangHoa = [];
+            renderHangHoaList([]);
           }
           
-          renderHangHoaList(allHangHoa);
-        } else {
-          console.error('HangHoa is not an array:', hangHoa); // Debug log
+        }).withFailureHandler(err => {
+          console.error('=== getHangHoaForSidebar FAILURE ==='); // Debug log
+          console.error('Error loading HangHoa:', err); // Debug log
+          
           allHangHoa = [];
-          renderHangHoaList([]);
-        }
-      }).withFailureHandler(err => {
-        console.error('=== getHangHoaForSidebar FAILURE ==='); // Debug log
-        console.error('Error loading HangHoa:', err); // Debug log
-        document.getElementById('loadingHangHoa').textContent = 'Lỗi tải dữ liệu hàng hóa.';
-      }).getHangHoaForSidebar();
+          
+          // Hiển thị thông báo lỗi
+          const listElement = document.getElementById('hanghoaList');
+          if (listElement) {
+            listElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #dc3545;">Lỗi tải dữ liệu hàng hóa: ' + err.toString() + '</div>';
+          }
+          
+          if (loadingElement) {
+            loadingElement.style.display = 'none';
+          }
+        }).getHangHoaForSidebar();
+        
+      } catch (error) {
+        console.error('Error in loadHangHoa:', error); // Debug log
+        allHangHoa = [];
+        renderHangHoaList([]);
+      }
       
       console.log('=== loadHangHoa END ==='); // Debug log
     }
 
-    function testFilterHangHoa() {
-      console.log('=== testFilterHangHoa START ==='); // Debug log
-      console.log('Testing filterHangHoa function...'); // Debug log
-      console.log('Current allHangHoa:', allHangHoa); // Debug log
-      console.log('Current allHangHoa length:', allHangHoa.length); // Debug log
-      
-      // Test với search term "test"
-      document.getElementById('hanghoaSearchInput').value = 'test';
-      filterHangHoa();
-      
-      console.log('=== testFilterHangHoa END ==='); // Debug log
-    }
 
-    function debugHangHoaData() {
-      console.log('=== debugHangHoaData START ==='); // Debug log
-      console.log('allHangHoa:', allHangHoa); // Debug log
-      console.log('allHangHoa length:', allHangHoa.length); // Debug log
-      console.log('allHangHoa type:', typeof allHangHoa); // Debug log
-      console.log('Is Array:', Array.isArray(allHangHoa)); // Debug log
-      
-      if (Array.isArray(allHangHoa)) {
-        console.log('First 5 items:', allHangHoa.slice(0, 5)); // Debug log
-        console.log('Last 5 items:', allHangHoa.slice(-5)); // Debug log
-      }
-      
-      // Kiểm tra DOM elements
-      const listElement = document.getElementById('hanghoaList');
-      const loadingElement = document.getElementById('loadingHangHoa');
-      console.log('hanghoaList element:', listElement); // Debug log
-      console.log('loadingHangHoa element:', loadingElement); // Debug log
-      
-      console.log('=== debugHangHoaData END ==='); // Debug log
-    }
+
+
+
+
+
+
 
     function renderAccountList(accounts) {
       const listElement = document.getElementById('accountList');
@@ -1155,59 +1156,103 @@
     // ==================== CHỨC NĂNG HÀNG HÓA ====================
     
     function renderHangHoaList(hangHoaToRender) {
-      console.log('=== renderHangHoaList START ==='); // Debug log
-      console.log('hangHoaToRender:', hangHoaToRender); // Debug log
-      console.log('hangHoaToRender length:', hangHoaToRender.length); // Debug log
-      
+      // Lấy DOM elements
       const listElement = document.getElementById('hanghoaList');
-      console.log('listElement:', listElement); // Debug log
-      
       const loadingElement = document.getElementById('loadingHangHoa');
-      console.log('loadingElement:', loadingElement); // Debug log
       
-      if (hangHoaToRender.length === 0) {
-        console.log('No items to render, showing no results message'); // Debug log
-        loadingElement.style.display = 'none';
-        listElement.innerHTML = '<div class="no-results" style="padding: 20px; text-align: center; color: #5f6368; font-style: italic;">Không tìm thấy hàng hóa phù hợp.</div>';
+      if (!listElement) {
         return;
       }
       
-      console.log('Rendering items...'); // Debug log
-      loadingElement.style.display = 'none';
+      // Kiểm tra dữ liệu đầu vào
+      if (!hangHoaToRender || !Array.isArray(hangHoaToRender) || hangHoaToRender.length === 0) {
+        // Ẩn loading nếu có
+        if (loadingElement) {
+          loadingElement.style.display = 'none';
+        }
+        
+        listElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #5f6368; font-style: italic;">Không tìm thấy hàng hóa phù hợp.</div>';
+        return;
+      }
+      
+      // Ẩn loading nếu có
+      if (loadingElement) {
+        loadingElement.style.display = 'none';
+      }
+      
+      // Hiển thị danh sách
       listElement.style.display = 'block';
       
+      // Tạo HTML
       let html = '';
-      let itemCount = 0; // Debug counter
       
-      hangHoaToRender.forEach((item, index) => {
-        console.log(`Rendering item ${index}:`, item); // Debug log
-        itemCount++; // Debug counter
+      for (let i = 0; i < hangHoaToRender.length; i++) {
+        const item = hangHoaToRender[i];
+        if (!item) continue;
         
         const isChecked = selectedHangHoaIds.has(item.uniqueId) ? 'checked' : '';
+        
         html += `
           <label class="hanghoa-item" for="hanghoa-${item.uniqueId}">
             <input type="checkbox" id="hanghoa-${item.uniqueId}" class="hanghoa-checkbox" onchange="toggleHangHoaSelection('${item.uniqueId}')" ${isChecked}>
             <div class="hanghoa-info">
-              <div class="hanghoa-name">${item.tenHang}</div>
+              <div class="hanghoa-name">${item.tenHang || 'N/A'}</div>
               <div class="hanghoa-code">
-                <span class="ma-kho">${item.maKho}</span><span>${item.maHang}</span>
+                <span class="ma-kho">${item.maKho || 'N/A'}</span><span>${item.maHang || 'N/A'}</span>
               </div>
-              <div class="hanghoa-details">Quy cách: ${item.quyCach || 'N/A'} | ĐVT: ${item.dvt || 'N/A'}</div>
+              <div class="hanghoa-details">Quy cách: ${item.quyCach || '...'} | ĐVT: ${item.dvt || 'N/A'}</div>
             </div>
           </label>
         `;
-      });
+      }
       
-      console.log('Total items processed:', itemCount); // Debug log
-      console.log('Final HTML length:', html.length); // Debug log
-      console.log('HTML preview (first 500 chars):', html.substring(0, 500)); // Debug log
-      
+      // Cập nhật DOM
       listElement.innerHTML = html;
       
-      // Kiểm tra xem HTML có được set đúng không
-      console.log('After setting innerHTML, listElement.children.length:', listElement.children.length); // Debug log
+      // Hiển thị thông báo thành công
+      const statusElement = document.getElementById('hanghoaStatus');
+      if (statusElement) {
+        if (hangHoaToRender.length === allHangHoa.length) {
+          statusElement.textContent = `📋 Hiển thị tất cả ${hangHoaToRender.length} hàng hóa`;
+        } else {
+          statusElement.textContent = `🔍 Tìm thấy ${hangHoaToRender.length} kết quả phù hợp`;
+        }
+        statusElement.style.display = 'block';
+        statusElement.style.background = '#e6f4ea';
+        statusElement.style.borderColor = '#34a853';
+        statusElement.style.color = '#137333';
+        
+        // Tự động ẩn sau 3 giây
+        setTimeout(() => {
+          if (statusElement.textContent.includes('Tìm thấy')) {
+            statusElement.style.display = 'none';
+          }
+        }, 3000);
+      }
       
-      console.log('=== renderHangHoaList END ==='); // Debug log
+      // Hiển thị thông báo tạm thời
+      const tempMsg = document.createElement('div');
+      tempMsg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      `;
+      // tempMsg.textContent = `✅ Tìm kiếm thành công: ${hangHoaToRender.length} kết quả`;
+      // document.body.appendChild(tempMsg);
+      
+      // Tự động xóa sau 2 giây
+      setTimeout(() => {
+        if (tempMsg.parentNode) {
+          tempMsg.parentNode.removeChild(tempMsg);
+        }
+      }, 2000);
     }
 
     function toggleHangHoaSelection(uniqueId) {
@@ -1229,48 +1274,77 @@
       }
     }
 
-    function filterHangHoa() {
-      console.log('=== filterHangHoa START ==='); // Debug log
-      
-      const searchInput = document.getElementById('hanghoaSearchInput');
-      console.log('searchInput element:', searchInput); // Debug log
-      
-      if (!searchInput) {
-        console.error('hanghoaSearchInput element not found!'); // Debug log
+    // Hàm filter đơn giản và mới
+    function filterHangHoaSimple() {
+      // Lấy input
+      const input = document.getElementById('hanghoaSearchInput');
+      if (!input) {
         return;
       }
       
-      const searchTerm = searchInput.value.toLowerCase();
-      console.log('searchTerm:', searchTerm); // Debug log
+      const term = input.value.toLowerCase().trim();
       
-      const clearBtn = document.getElementById('clearHangHoaSearch');
-      console.log('clearBtn element:', clearBtn); // Debug log
-      
-      console.log('allHangHoa:', allHangHoa); // Debug log
-      console.log('allHangHoa length:', allHangHoa.length); // Debug log
-      
-      if (searchTerm) {
-        clearBtn.style.display = 'block';
-        const filtered = allHangHoa.filter(item => 
-          item.maKho.toLowerCase().includes(searchTerm) || 
-          item.maHang.toLowerCase().includes(searchTerm) ||
-          item.tenHang.toLowerCase().includes(searchTerm)
-        );
-        console.log('Filtered results:', filtered); // Debug log
-        console.log('Filtered results length:', filtered.length); // Debug log
-        renderHangHoaList(filtered);
-      } else {
-        clearBtn.style.display = 'none';
-        renderHangHoaList(allHangHoa);
+      // Kiểm tra dữ liệu
+      if (!allHangHoa || !Array.isArray(allHangHoa) || allHangHoa.length === 0) {
+        return;
       }
       
-      console.log('=== filterHangHoa END ==='); // Debug log
+      // Nếu không có từ khóa, hiển thị tất cả
+      if (!term) {
+        renderHangHoaList(allHangHoa);
+        return;
+      }
+      
+      // Filter
+      const results = [];
+      for (let i = 0; i < allHangHoa.length; i++) {
+        const item = allHangHoa[i];
+        if (!item) continue;
+        
+        const kho = String(item.maKho || '').toLowerCase();
+        const hang = String(item.maHang || '').toLowerCase();
+        const ten = String(item.tenHang || '').toLowerCase();
+        
+        if (kho.includes(term) || hang.includes(term) || ten.includes(term)) {
+          results.push(item);
+        }
+      }
+      
+      // Render
+      renderHangHoaList(results);
+    }
+
+    function filterHangHoa() {
+      // Gọi hàm filter đơn giản
+      filterHangHoaSimple();
     }
 
     function clearHangHoaSearch() {
-      document.getElementById('hanghoaSearchInput').value = '';
-      document.getElementById('clearHangHoaSearch').style.display = 'none';
-      renderHangHoaList(allHangHoa);
+      try {
+        console.log('clearHangHoaSearch called'); // Debug log
+        
+        const searchInput = document.getElementById('hanghoaSearchInput');
+        const clearBtn = document.getElementById('clearHangHoaSearch');
+        
+        if (searchInput) {
+          searchInput.value = '';
+          console.log('Search input cleared'); // Debug log
+        }
+        
+        if (clearBtn) {
+          clearBtn.style.display = 'none';
+          console.log('Clear button hidden'); // Debug log
+        }
+        
+        // Hiển thị lại tất cả hàng hóa
+        console.log('Rendering all hang hoa items'); // Debug log
+        renderHangHoaList(allHangHoa);
+        
+      } catch (error) {
+        console.error('Error in clearHangHoaSearch:', error); // Debug log
+        // Hiển thị lại tất cả hàng hóa nếu có lỗi
+        renderHangHoaList(allHangHoa);
+      }
     }
 
     function applyHangHoaSelection() {
@@ -1425,76 +1499,161 @@
     }
     
     function populateKhoOptions() {
-      const khoFilter = document.getElementById('khoFilter');
-      const khoList = [...new Set(allHangHoa.map(item => item.maKho))].sort();
-      
-      khoFilter.innerHTML = '<option value="">Chọn mã kho...</option>';
-      khoList.forEach(kho => {
-        khoFilter.innerHTML += `<option value="${kho}">${kho}</option>`;
-      });
+      try {
+        console.log('populateKhoOptions called'); // Debug log
+        
+        const khoFilter = document.getElementById('khoFilter');
+        if (!khoFilter) {
+          console.error('khoFilter element not found!'); // Debug log
+          return;
+        }
+        
+        // Kiểm tra dữ liệu
+        if (!allHangHoa || !Array.isArray(allHangHoa) || allHangHoa.length === 0) {
+          console.error('allHangHoa is empty or invalid!'); // Debug log
+          khoFilter.innerHTML = '<option value="">Không có dữ liệu kho</option>';
+          return;
+        }
+        
+        // Lấy danh sách kho duy nhất
+        const khoList = [...new Set(allHangHoa.map(item => item.maKho).filter(Boolean))].sort();
+        console.log('Kho list:', khoList); // Debug log
+        
+        khoFilter.innerHTML = '<option value="">Chọn mã kho...</option>';
+        khoList.forEach(kho => {
+          khoFilter.innerHTML += `<option value="${kho}">${kho}</option>`;
+        });
+        
+        console.log('Kho options populated successfully'); // Debug log
+        
+      } catch (error) {
+        console.error('Error in populateKhoOptions:', error); // Debug log
+      }
     }
     
     function populateHangOptions() {
-      const hangFilter = document.getElementById('hangFilter');
-      const hangList = [...new Set(allHangHoa.map(item => item.maHang))].sort();
-      
-      hangFilter.innerHTML = '<option value="">Chọn mã hàng...</option>';
-      hangList.forEach(hang => {
-        hangFilter.innerHTML += `<option value="${hang}">${hang}</option>`;
-      });
+      try {
+        console.log('populateHangOptions called'); // Debug log
+        
+        const hangFilter = document.getElementById('hangFilter');
+        if (!hangFilter) {
+          console.error('hangFilter element not found!'); // Debug log
+          return;
+        }
+        
+        // Kiểm tra dữ liệu
+        if (!allHangHoa || !Array.isArray(allHangHoa) || allHangHoa.length === 0) {
+          console.error('allHangHoa is empty or invalid!'); // Debug log
+          hangFilter.innerHTML = '<option value="">Không có dữ liệu hàng</option>';
+          return;
+        }
+        
+        // Lấy danh sách hàng duy nhất
+        const hangList = [...new Set(allHangHoa.map(item => item.maHang).filter(Boolean))].sort();
+        console.log('Hang list:', hangList); // Debug log
+        
+        hangFilter.innerHTML = '<option value="">Chọn mã hàng...</option>';
+        hangList.forEach(hang => {
+          hangFilter.innerHTML += `<option value="${hang}">${hang}</option>`;
+        });
+        
+        console.log('Hang options populated successfully'); // Debug log
+        
+      } catch (error) {
+        console.error('Error in populateHangOptions:', error); // Debug log
+      }
     }
     
     function applyKhoHangFilter() {
       console.log('applyKhoHangFilter called'); // Debug log
       
-      const filterByKho = document.getElementById('filterByKho').checked;
-      const filterByHang = document.getElementById('filterByHang').checked;
-      
-      console.log('Filter by kho:', filterByKho, 'Filter by hang:', filterByHang); // Debug log
-      
-      let filteredHangHoa = [...allHangHoa];
-      
-      if (filterByKho) {
-        const selectedKho = document.getElementById('khoFilter').value;
-        console.log('Selected kho:', selectedKho); // Debug log
-        if (selectedKho) {
-          filteredHangHoa = filteredHangHoa.filter(item => item.maKho === selectedKho);
-          console.log('After kho filter:', filteredHangHoa.length); // Debug log
+      try {
+        const filterByKho = document.getElementById('filterByKho').checked;
+        const filterByHang = document.getElementById('filterByHang').checked;
+        
+        console.log('Filter by kho:', filterByKho, 'Filter by hang:', filterByHang); // Debug log
+        
+        // Kiểm tra xem allHangHoa có dữ liệu không
+        if (!allHangHoa || !Array.isArray(allHangHoa) || allHangHoa.length === 0) {
+          console.error('allHangHoa is empty or invalid!'); // Debug log
+          return;
         }
-      }
-      
-      if (filterByHang) {
-        const selectedHang = document.getElementById('hangFilter').value;
-        console.log('Selected hang:', selectedHang); // Debug log
-        if (selectedHang) {
-          filteredHangHoa = filteredHangHoa.filter(item => item.maHang === selectedHang);
-          console.log('After hang filter:', filteredHangHoa.length); // Debug log
+        
+        let filteredHangHoa = [...allHangHoa];
+        
+        if (filterByKho) {
+          const selectedKho = document.getElementById('khoFilter').value;
+          console.log('Selected kho:', selectedKho); // Debug log
+          if (selectedKho) {
+            filteredHangHoa = filteredHangHoa.filter(item => {
+              if (!item || !item.maKho) return false;
+              return item.maKho === selectedKho;
+            });
+            console.log('After kho filter:', filteredHangHoa.length); // Debug log
+          }
         }
+        
+        if (filterByHang) {
+          const selectedHang = document.getElementById('hangFilter').value;
+          console.log('Selected hang:', selectedHang); // Debug log
+          if (selectedHang) {
+            filteredHangHoa = filteredHangHoa.filter(item => {
+              if (!item || !item.maHang) return false;
+              return item.maHang === selectedHang;
+            });
+            console.log('After hang filter:', filteredHangHoa.length); // Debug log
+          }
+        }
+        
+        console.log('Final filtered results:', filteredHangHoa.length); // Debug log
+        
+        // Render danh sách đã lọc
+        renderHangHoaList(filteredHangHoa);
+        
+      } catch (error) {
+        console.error('Error in applyKhoHangFilter:', error); // Debug log
+        // Hiển thị lại tất cả hàng hóa nếu có lỗi
+        renderHangHoaList(allHangHoa);
       }
-      
-      console.log('Final filtered results:', filteredHangHoa.length); // Debug log
-      
-      // Render danh sách đã lọc
-      renderHangHoaList(filteredHangHoa);
     }
     
     function resetKhoHangFilter() {
-      // Reset tất cả checkbox
-      document.getElementById('filterByKho').checked = false;
-      document.getElementById('filterByHang').checked = false;
-      
-      // Reset tất cả select
-      document.getElementById('khoFilter').disabled = true;
-      document.getElementById('hangFilter').disabled = true;
-      
-      // Reset values
-      document.getElementById('khoFilter').value = '';
-      document.getElementById('hangFilter').value = '';
-      
-      // Hiển thị lại tất cả hàng hóa
-      renderHangHoaList(allHangHoa);
+      try {
+        console.log('resetKhoHangFilter called'); // Debug log
+        
+        // Reset tất cả checkbox
+        const filterByKho = document.getElementById('filterByKho');
+        const filterByHang = document.getElementById('filterByHang');
+        
+        if (filterByKho) filterByKho.checked = false;
+        if (filterByHang) filterByHang.checked = false;
+        
+        // Reset tất cả select
+        const khoFilter = document.getElementById('khoFilter');
+        const hangFilter = document.getElementById('hangFilter');
+        
+        if (khoFilter) {
+          khoFilter.disabled = true;
+          khoFilter.value = '';
+        }
+        
+        if (hangFilter) {
+          hangFilter.disabled = true;
+          hangFilter.value = '';
+        }
+        
+        // Hiển thị lại tất cả hàng hóa
+        console.log('Resetting to show all hang hoa items'); // Debug log
+        renderHangHoaList(allHangHoa);
+        
+      } catch (error) {
+        console.error('Error in resetKhoHangFilter:', error); // Debug log
+        // Hiển thị lại tất cả hàng hóa nếu có lỗi
+        renderHangHoaList(allHangHoa);
+      }
     }
     
+
 
   </script>
 </body>
