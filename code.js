@@ -1548,28 +1548,39 @@ function calculateFinalBalanceWithInternalHandling(parentAccount, childAccounts,
 /**
  * HÀM PHỤ: Tính toán phát sinh tổng hợp từ tài khoản cha và con (SỬA LẠI)
  */
-function calculateAggregatedPhatSinh(trans, parentAccount, childAccounts) {
-  let phatSinhNo = 0;
-  let phatSinhCo = 0;
+// function calculateAggregatedPhatSinh(trans, parentAccount, childAccounts) {
+//   let phatSinhNo = 0;
+//   let phatSinhCo = 0;
   
-  // Phát sinh từ tài khoản cha
-  if (trans.TK_NO === parentAccount) phatSinhNo += trans.SO_TIEN;
-  if (trans.TK_CO === parentAccount) phatSinhCo += trans.SO_TIEN;
+//   // Phát sinh từ tài khoản cha
+//   if (trans.TK_NO === parentAccount) phatSinhNo += trans.SO_TIEN;
+//   if (trans.TK_CO === parentAccount) phatSinhCo += trans.SO_TIEN;
   
-  // Phát sinh từ tài khoản con (CHỈ TÍNH KHI KHÔNG PHẢI GIAO DỊCH NỘI BỘ)
-  if (childAccounts.length > 0) {
-    const isInternalNo = isAccountInHierarchy(trans.TK_NO, parentAccount, childAccounts);
-    const isInternalCo = isAccountInHierarchy(trans.TK_CO, parentAccount, childAccounts);
+//   // Phát sinh từ tài khoản con (CHỈ TÍNH KHI KHÔNG PHẢI GIAO DỊCH NỘI BỘ)
+//   if (childAccounts.length > 0) {
+//     const isInternalNo = isAccountInHierarchy(trans.TK_NO, parentAccount, childAccounts);
+//     const isInternalCo = isAccountInHierarchy(trans.TK_CO, parentAccount, childAccounts);
     
-    // Chỉ tính khi giao dịch với tài khoản bên ngoài hệ thống cha-con
-    if (isInternalNo && !isInternalCo) {
-      phatSinhNo += trans.SO_TIEN;
-    }
-    if (isInternalCo && !isInternalNo) {
-      phatSinhCo += trans.SO_TIEN;
-    }
-  }
+//     // Chỉ tính khi giao dịch với tài khoản bên ngoài hệ thống cha-con
+//     if (isInternalNo && !isInternalCo) {
+//       phatSinhNo += trans.SO_TIEN;
+//     }
+//     if (isInternalCo && !isInternalNo) {
+//       phatSinhCo += trans.SO_TIEN;
+//     }
+//   }
   
+//   return [phatSinhNo, phatSinhCo];
+// }
+function calculateAggregatedPhatSinh(trans, parentAccount, childAccounts) {
+  const accounts = [parentAccount, ...childAccounts.map(c => c.ma)];
+  const isInternalNo = accounts.includes(trans.TK_NO);
+  const isInternalCo = accounts.includes(trans.TK_CO);
+
+  let phatSinhNo = 0, phatSinhCo = 0;
+  if (isInternalNo && !isInternalCo) phatSinhNo = trans.SO_TIEN;
+  if (isInternalCo && !isInternalNo) phatSinhCo = trans.SO_TIEN;
+
   return [phatSinhNo, phatSinhCo];
 }
 
