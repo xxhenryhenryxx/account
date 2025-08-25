@@ -1881,19 +1881,73 @@ function getReportDates() {
 /**
  * Hàm mới để lấy dữ liệu hàng hóa cho sidebar Unified
  */
+// function getHangHoaForSidebar() {
+//   try {
+//     const cache = CacheService.getScriptCache();
+//     const CACHE_KEY = 'DANH_SACH_HANG_HOA';
+
+//     const cachedData = cache.get(CACHE_KEY);
+//     if (cachedData != null) {
+//       console.log('✅ Loaded products from CACHE for Unified sidebar.');
+//       const hangHoaList = JSON.parse(cachedData);
+//       // Thêm uniqueId cho mỗi item
+//       hangHoaList.forEach(item => {
+//         item.uniqueId = `${item.maKho}|${item.maHang}`;
+//       });
+//       return hangHoaList;
+//     }
+
+//     console.log('⚠️ Cache miss. Reading products from Sheet "DMHH" for Unified sidebar.');
+//     const ss = SpreadsheetApp.getActiveSpreadsheet();
+//     const sheetDMHH = ss.getSheetByName('DMHH');
+//     if (!sheetDMHH) {
+//       throw new Error('Không tìm thấy sheet "DMHH"');
+//     }
+
+//     const data = sheetDMHH.getDataRange().getValues();
+//     const hangHoaList = [];
+//     // Bắt đầu từ dòng 2 để bỏ qua tiêu đề
+//     for (let i = 1; i < data.length; i++) {
+//       const row = data[i];
+//       const maKho = row[0]?.toString().trim();
+//       const maHang = row[1]?.toString().trim();
+//       if (maKho && maHang) { // Chỉ lấy hàng hóa có đủ mã kho và mã hàng
+//         const item = {
+//           maKho: maKho,
+//           maHang: maHang,
+//           tenHang: row[2]?.toString().trim() || '',
+//           quyCach: row[3]?.toString().trim() || '',
+//           dvt: row[4]?.toString().trim() || ''
+//         };
+//         item.uniqueId = `${maKho}|${maHang}`;
+//         hangHoaList.push(item);
+//       }
+//     }
+
+//     // Sắp xếp để dễ tìm kiếm
+//     hangHoaList.sort((a, b) => a.maKho.localeCompare(b.maKho) || a.maHang.localeCompare(b.maHang));
+
+//     // Lưu vào cache trong 15 phút
+//     cache.put(CACHE_KEY, JSON.stringify(hangHoaList), 900);
+//     console.log(`✅ Loaded and cached ${hangHoaList.length} products for Unified sidebar.`);
+
+//     return hangHoaList;
+//   } catch (e) {
+//     console.error('Error in getHangHoaForSidebar: ' + e.toString());
+//     return [];
+//   }
+// }
+// Phiên bản khắc phục của hàm getHangHoaForSidebar
 function getHangHoaForSidebar() {
   try {
     const cache = CacheService.getScriptCache();
     const CACHE_KEY = 'DANH_SACH_HANG_HOA';
-
     const cachedData = cache.get(CACHE_KEY);
+    
     if (cachedData != null) {
       console.log('✅ Loaded products from CACHE for Unified sidebar.');
       const hangHoaList = JSON.parse(cachedData);
-      // Thêm uniqueId cho mỗi item
-      hangHoaList.forEach(item => {
-        item.uniqueId = `${item.maKho}|${item.maHang}`;
-      });
+      // Khi tải từ cache, uniqueId đã được đảm bảo là duy nhất từ lần lưu trước.
       return hangHoaList;
     }
 
@@ -1904,40 +1958,60 @@ function getHangHoaForSidebar() {
       throw new Error('Không tìm thấy sheet "DMHH"');
     }
 
-    const data = sheetDMHH.getDataRange().getValues();
+    // *** SỬA ĐỔI 1: Chỉ lấy vùng dữ liệu có chứa nội dung để tránh timeout ***
+    // Giả sử dữ liệu nằm từ cột A đến E
+    const lastRow = sheetDMHH.getLastRow();
+    // Nếu sheet chỉ có header hoặc không có gì, trả về mảng rỗng
+    if (lastRow < 2) return []; 
+    const data = sheetDMHH.getRange('A2:E' + lastRow).getValues();
+
     const hangHoaList = [];
-    // Bắt đầu từ dòng 2 để bỏ qua tiêu đề
-    for (let i = 1; i < data.length; i++) {
+    
+    // Bắt đầu từ dòng 2 (chỉ số 0 trong mảng data)
+    for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const maKho = row[0]?.toString().trim();
       const maHang = row[1]?.toString().trim();
-      if (maKho && maHang) { // Chỉ lấy hàng hóa có đủ mã kho và mã hàng
+      
+      if (maKho && maHang) {
+        // *** SỬA ĐỔI 2: Đảm bảo uniqueId LUÔN LUÔN là duy nhất bằng cách thêm chỉ số dòng ***
+        // Chỉ số i + 2 tương ứng với số dòng thực tế trên sheet
+        const uniqueId = `${maKho}|${maHang}|${i + 2}`;
+
         const item = {
           maKho: maKho,
           maHang: maHang,
           tenHang: row[2]?.toString().trim() || '',
           quyCach: row[3]?.toString().trim() || '',
-          dvt: row[4]?.toString().trim() || ''
+          dvt: row[4]?.toString().trim() || '',
+          uniqueId: uniqueId // Gán ID đã được đảm bảo duy nhất
         };
-        item.uniqueId = `${maKho}|${maHang}`;
         hangHoaList.push(item);
       }
     }
 
-    // Sắp xếp để dễ tìm kiếm
     hangHoaList.sort((a, b) => a.maKho.localeCompare(b.maKho) || a.maHang.localeCompare(b.maHang));
-
-    // Lưu vào cache trong 15 phút
-    cache.put(CACHE_KEY, JSON.stringify(hangHoaList), 900);
+    
+    cache.put(CACHE_KEY, JSON.stringify(hangHoaList), 900); // Lưu vào cache trong 15 phút
     console.log(`✅ Loaded and cached ${hangHoaList.length} products for Unified sidebar.`);
 
     return hangHoaList;
   } catch (e) {
     console.error('Error in getHangHoaForSidebar: ' + e.toString());
-    return [];
+    return []; // Trả về mảng rỗng khi có lỗi
   }
 }
 
+/**
+ * HÀM HỖ TRỢ: Chạy hàm này thủ công để xóa cache khi cần kiểm tra dữ liệu mới.
+ * 1. Mở trình chỉnh sửa Apps Script.
+ * 2. Chọn hàm 'clearHangHoaCache' từ danh sách.
+ * 3. Nhấn nút ▶ Run.
+ */
+function clearHangHoaCache() {
+  CacheService.getScriptCache().remove('DANH_SACH_HANG_HOA');
+  console.log('Cache hàng hóa đã được xóa.');
+}
 /**
  * Hàm ghi hàng hóa vào sheet từ sidebar Unified (tương thích với cấu trúc dữ liệu mới)
  * @param {Array<Object>} selectedItems Mảng các đối tượng hàng hóa đã chọn từ sidebar Unified
