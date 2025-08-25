@@ -82,7 +82,7 @@ function getHangHoaLookupMap() {
     
     // Lưu vào cache trong 15 phút (900 giây)
     const mapArray = Array.from(hangHoaMap.entries());
-    cache.put(CACHE_KEY, JSON.stringify(mapArray), 900);
+    cache.put(CACHE_KEY, JSON.stringify(mapArray), 300);
     
     console.log(`✅ Loaded and cached ${hangHoaMap.size} products for auto-fill.`);
     return hangHoaMap;
@@ -1618,13 +1618,22 @@ function xuLyGiaoDichVaThue(transactionsRaw) {
       const dauSoCo = tkCo.charAt(0);
       let butToanThue = null;
 
-      if (['1', '2', '6', '8'].includes(dauSoNo)) {
-        butToanThue = { ...trans, TK_NO: '1331', TK_CO: tkCo, SO_TIEN: thueVAT, DIEN_GIAI: `Thuế GTGT của ${trans.DIEN_GIAI || 'chứng từ ' + trans.SO_CT}` };
-      } 
-      else if (['5', '7'].includes(dauSoCo)) {
+      // if (['1', '2', '6', '8'].includes(dauSoNo)) {
+      //   butToanThue = { ...trans, TK_NO: '1331', TK_CO: tkCo, SO_TIEN: thueVAT, DIEN_GIAI: `Thuế GTGT của ${trans.DIEN_GIAI || 'chứng từ ' + trans.SO_CT}` };
+        
+      // } 
+      // else if (['5', '7'].includes(dauSoCo)) {
+      //   butToanThue = { ...trans, TK_NO: tkNo, TK_CO: '33311', SO_TIEN: thueVAT, DIEN_GIAI: `Thuế GTGT của ${trans.DIEN_GIAI || 'chứng từ ' + trans.SO_CT}` };
+      // }
+       if (['5', '7'].includes(dauSoCo)) {
         butToanThue = { ...trans, TK_NO: tkNo, TK_CO: '33311', SO_TIEN: thueVAT, DIEN_GIAI: `Thuế GTGT của ${trans.DIEN_GIAI || 'chứng từ ' + trans.SO_CT}` };
+        
+      } 
+      else if (['1', '2', '6', '8'].includes(dauSoNo)) {
+        butToanThue = { ...trans, TK_NO: '1331', TK_CO: tkCo, SO_TIEN: thueVAT, DIEN_GIAI: `Thuế GTGT của ${trans.DIEN_GIAI || 'chứng từ ' + trans.SO_CT}` };
       }
-      
+
+
       if(butToanThue) {
         finalTransactions.push(butToanThue);
       }
@@ -1632,6 +1641,7 @@ function xuLyGiaoDichVaThue(transactionsRaw) {
   }
   return finalTransactions;
 }
+
 
 /**
  * HÀM PHỤ: Tính toán số dư cuối kỳ từ tổng nợ và tổng có.
